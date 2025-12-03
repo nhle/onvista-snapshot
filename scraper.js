@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, mkdirSync } from 'fs';
@@ -128,9 +128,87 @@ async function getNextPageButton(page) {
 }
 
 /**
+ * Save page as self-contained HTML with inlined resources
+ * @param {object} page - Playwright page object
+ * @param {string} filepath - Path to save HTML file
+ */
+async function savePageAsHTML(page, filepath) {
+  try {
+    // Use page.evaluate to inline all resources directly in the browser context
+    const html = await page.evaluate(async () => {
+      // Helper function to fetch and convert resource to data URL
+      async function fetchAsDataURL(url) {
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        } catch (error) {
+          console.log('Failed to fetch:', url);
+          return null;
+        }
+      }
+
+      // Inline all stylesheets
+      const styleLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+      for (const link of styleLinks) {
+        try {
+          const response = await fetch(link.href);
+          const cssText = await response.text();
+          const style = document.createElement('style');
+          style.textContent = cssText;
+          link.replaceWith(style);
+        } catch (error) {
+          console.log('Failed to inline stylesheet:', link.href);
+        }
+      }
+
+      // Convert all images to data URLs
+      const images = Array.from(document.querySelectorAll('img'));
+      for (const img of images) {
+        if (img.src && img.src.startsWith('http')) {
+          const dataURL = await fetchAsDataURL(img.src);
+          if (dataURL) {
+            img.src = dataURL;
+          }
+        }
+      }
+
+      // Convert background images in inline styles
+      const elementsWithBgImage = Array.from(document.querySelectorAll('[style*="background"]'));
+      for (const elem of elementsWithBgImage) {
+        const style = elem.getAttribute('style');
+        if (style && style.includes('url(')) {
+          const urlMatch = style.match(/url\(['"]?([^'")\s]+)['"]?\)/);
+          if (urlMatch && urlMatch[1] && urlMatch[1].startsWith('http')) {
+            const dataURL = await fetchAsDataURL(urlMatch[1]);
+            if (dataURL) {
+              elem.setAttribute('style', style.replace(urlMatch[0], `url(${dataURL})`));
+            }
+          }
+        }
+      }
+
+      // Return the modified HTML
+      return document.documentElement.outerHTML;
+    });
+
+    // Write the HTML file
+    writeFileSync(filepath, `<!DOCTYPE html>\n${html}`, 'utf-8');
+  } catch (error) {
+    console.error('Error saving HTML:', error);
+    throw error;
+  }
+}
+
+/**
  * Handle pagination and capture all pages
  * @param {object} page - Playwright page object
- * @param {string} basePath - Base path for screenshots
+ * @param {string} basePath - Base path for HTML files
  * @param {string} indexName - Index name for file naming
  * @param {string} timestamp - Timestamp for file naming
  */
@@ -141,16 +219,13 @@ async function handlePagination(page, basePath, indexName, timestamp) {
   console.log('Starting pagination loop...');
 
   while (hasMorePages) {
-    // Take screenshot of current page
-    const filename = `${indexName}_${timestamp}_page${pageNumber}.png`;
+    // Save HTML of current page
+    const filename = `${indexName}_${timestamp}_page${pageNumber}.html`;
     const filepath = join(basePath, filename);
     
-    console.log(`[Page ${pageNumber}] Taking screenshot: ${filename}`);
-    await page.screenshot({ 
-      path: filepath, 
-      fullPage: true 
-    });
-    console.log(`[Page ${pageNumber}] Screenshot saved: ${filepath}`);
+    console.log(`[Page ${pageNumber}] Saving HTML: ${filename}`);
+    await savePageAsHTML(page, filepath);
+    console.log(`[Page ${pageNumber}] HTML saved: ${filepath}`);
 
     // Check for next page button
     const nextButton = await getNextPageButton(page);
@@ -194,11 +269,11 @@ async function processUrl(page, url) {
 
     const indexName = extractIndexName(url);
     const timestamp = createTimestamp();
-    const screenshotDir = join(__dirname, 'screenshots', indexName, timestamp);
-    ensureDirectory(screenshotDir);
+    const htmlDir = join(__dirname, 'screenshots', indexName, timestamp);
+    ensureDirectory(htmlDir);
 
-    console.log(`Saving screenshots to: ${screenshotDir}`);
-    const totalPages = await handlePagination(page, screenshotDir, indexName, timestamp);
+    console.log(`Saving HTML files to: ${htmlDir}`);
+    const totalPages = await handlePagination(page, htmlDir, indexName, timestamp);
     
     console.log(`Completed: Captured ${totalPages} page(s) for ${indexName}`);
   } catch (error) {

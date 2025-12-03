@@ -1,7 +1,7 @@
 {
   "name": "onvista-snapshot",
   "version": "1.0.0",
-  "description": "Playwright automation for capturing screenshots from onvista index pages",
+  "description": "Playwright automation for capturing self-contained HTML archives from onvista index pages",
   "main": "scraper.js",
   "type": "module",
   "scripts": {
@@ -12,7 +12,8 @@
   "keywords": [
     "playwright",
     "automation",
-    "screenshot",
+    "html-archive",
+    "web-scraper",
     "onvista"
   ],
   "author": "",

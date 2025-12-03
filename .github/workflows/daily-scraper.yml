@@ -81,7 +81,7 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user.email "action@github.com"
       
-      - name: Commit and push screenshots
+      - name: Commit and push HTML archives
         working-directory: screenshots
         run: |
           # Remove or modify .gitignore to allow screenshots directory
@@ -90,7 +90,7 @@ jobs:
           fi
           git add screenshots/ *.html
           if [ -n "$(git status --porcelain)" ]; then
-            git commit -m "chore: add daily screenshots $(date +%Y-%m-%d)"
+            git commit -m "chore: add daily HTML archives $(date +%Y-%m-%d)"
             git push origin screenshots
           else
             echo "No changes to commit"

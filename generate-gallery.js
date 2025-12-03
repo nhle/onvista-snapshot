@@ -8,7 +8,7 @@ const __dirname = dirname(__filename);
 
 /**
  * Scan screenshots directory and organize data by index
- * @returns {Object} - Organized screenshot data
+ * @returns {Object} - Organized HTML archive data
  */
 function scanScreenshots() {
   const screenshotsDir = join(__dirname, 'screenshots');
@@ -35,7 +35,7 @@ function scanScreenshots() {
       if (!statSync(timestampPath).isDirectory()) continue;
 
       const screenshots = readdirSync(timestampPath)
-        .filter(f => f.endsWith('.png'))
+        .filter(f => f.endsWith('.html'))
         .sort()
         .map(f => ({
           filename: f,
@@ -87,7 +87,7 @@ function generateIndexPage(indices) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Onvista Screenshots</title>
+  <title>Onvista HTML Archives</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -121,8 +121,8 @@ function generateIndexPage(indices) {
 </head>
 <body>
   <div class="container">
-    <h1>📊 Onvista Screenshots</h1>
-    <p class="subtitle">Browse historical index performance snapshots</p>
+    <h1>📊 Onvista HTML Archives</h1>
+    <p class="subtitle">Browse interactive historical index performance archives</p>
     
     <div class="index-grid">
 ${indexNames.map(key => {
@@ -131,7 +131,7 @@ ${indexNames.map(key => {
   return `      <a href="${key}.html" class="index-card">
         <div class="index-name">${index.name}</div>
         <div class="index-stats">
-          ${index.runs.length} snapshot${index.runs.length > 1 ? 's' : ''}<br>
+          ${index.runs.length} archive${index.runs.length > 1 ? 's' : ''}<br>
           Latest: ${latestRun.date}
         </div>
       </a>`;
@@ -166,7 +166,7 @@ function generateIndexDetailPage(indexKey, indexData) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${indexData.name} Screenshots</title>
+  <title>${indexData.name} HTML Archives</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -190,9 +190,9 @@ function generateIndexDetailPage(indexKey, indexData) {
     }
     .run-date { font-size: 1.3em; font-weight: 600; color: #333; }
     .run-info { color: #666; font-size: 0.9em; margin-top: 5px; }
-    .screenshot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .screenshot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; }
     .screenshot-item { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: white; }
-    .screenshot-item img { width: 100%; height: 200px; object-fit: cover; object-position: top; display: block; }
+    .screenshot-item iframe { width: 100%; height: 500px; border: none; display: block; background: white; }
     .screenshot-info { padding: 12px; background: #fafafa; }
     .screenshot-name { font-size: 0.9em; color: #333; font-weight: 500; }
     .screenshot-link { display: inline-block; margin-top: 8px; color: #2563eb; text-decoration: none; font-size: 0.85em; }
@@ -210,16 +210,14 @@ function generateIndexDetailPage(indexKey, indexData) {
 ${indexData.runs.map(run => `    <div class="run-section">
       <div class="run-header">
         <div class="run-date">${run.date}</div>
-        <div class="run-info">${run.screenshots.length} screenshot${run.screenshots.length > 1 ? 's' : ''}</div>
+        <div class="run-info">${run.screenshots.length} page${run.screenshots.length > 1 ? 's' : ''}</div>
       </div>
       <div class="screenshot-grid">
 ${run.screenshots.map(screenshot => `        <div class="screenshot-item">
-          <a href="${screenshot.path}" target="_blank">
-            <img src="${screenshot.path}" alt="${screenshot.filename}" loading="lazy">
-          </a>
+          <iframe src="${screenshot.path}" title="${screenshot.filename}" loading="lazy"></iframe>
           <div class="screenshot-info">
             <div class="screenshot-name">${screenshot.filename}</div>
-            <a href="${screenshot.path}" class="screenshot-link" target="_blank">View full size →</a>
+            <a href="${screenshot.path}" class="screenshot-link" target="_blank">Open full page →</a>
           </div>
         </div>`).join('\n')}
       </div>

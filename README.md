@@ -1,13 +1,16 @@
-# Onvista Snapshot Scraper
+# Onvista HTML Archive Scraper
 
-A Playwright-based automation tool for capturing full-page screenshots from onvista index pages with automatic cookie handling, table sorting, and pagination support.
+A Playwright-based automation tool for capturing self-contained HTML archives from onvista index pages with automatic cookie handling, table sorting, and pagination support. The archived pages are fully interactive, allowing you to click on stock links to view detailed information.
 
 ## Features
 
 - Automatically accepts cookie banners
 - Sorts tables by "Perf. relativ" (relative performance) in descending order
-- Captures full-page screenshots of all paginated pages
-- Organizes screenshots by index name and timestamp
+- Captures self-contained HTML archives of all paginated pages
+- Inlines all CSS and images for offline viewing
+- Stock links remain clickable and open live onvista.de pages
+- Organizes HTML archives by index name and timestamp
+- Generates a beautiful gallery with iframe previews
 - Handles multiple URLs from configuration file
 
 ## Prerequisites
@@ -59,14 +62,14 @@ node scraper.js
 
 ## Folder Structure
 
-Screenshots are saved in the following structure:
+HTML archives are saved in the following structure:
 
 ```
 screenshots/
 └── {index-name}/
     └── {timestamp}/
-        ├── {index-name}_{timestamp}_page1.png
-        ├── {index-name}_{timestamp}_page2.png
+        ├── {index-name}_{timestamp}_page1.html
+        ├── {index-name}_{timestamp}_page2.html
         └── ...
 ```
 
@@ -75,8 +78,8 @@ Example:
 screenshots/
 └── DAX/
     └── 2025-12-03_14-30-45/
-        ├── DAX_2025-12-03_14-30-45_page1.png
-        └── DAX_2025-12-03_14-30-45_page2.png
+        ├── DAX_2025-12-03_14-30-45_page1.html
+        └── DAX_2025-12-03_14-30-45_page2.html
 ```
 
 ## How It Works
@@ -86,13 +89,14 @@ screenshots/
 3. For each URL:
    - Navigates to the page
    - Waits for page load
-   - Clicks "Akzeptieren" to accept cookies
+   - Initializes consent cookies to bypass cookie banners
    - Clicks "Perf. relativ" header twice to sort descending
    - Extracts index name from URL
    - Creates timestamped folder structure
-   - Takes full-page screenshots
+   - Saves self-contained HTML archives with inlined CSS and images
    - Detects and navigates through pagination
    - Saves all pages with proper naming
+4. Generates a gallery with iframe previews using `generate-gallery.js`
 
 ## Troubleshooting
 
@@ -114,10 +118,11 @@ screenshots/
 - Check console output for pagination detection messages
 - Some pages may not have pagination
 
-### Screenshots not saving
+### HTML archives not saving
 - Check write permissions in the project directory
-- Ensure sufficient disk space
+- Ensure sufficient disk space (HTML files may be larger than screenshots)
 - Verify folder structure is created correctly
+- Check browser console for resource loading errors
 
 ## Configuration Options
 
@@ -130,10 +135,22 @@ You can modify `scraper.js` to adjust:
 
 ## Notes
 
-- The browser runs in non-headless mode by default for debugging
+- The browser runs in headless mode for efficiency
 - There's a 2-second delay between processing different URLs
-- Screenshots are saved as PNG files
+- HTML archives are self-contained with inlined CSS and base64-encoded images
+- Stock links in the archived pages remain clickable and open live onvista.de pages
 - The script handles errors gracefully and continues with remaining URLs
+- Use `npm run gallery` or `node generate-gallery.js` to regenerate the gallery after scraping
+
+## Gallery
+
+After running the scraper, generate the browsable gallery:
+
+```bash
+node generate-gallery.js
+```
+
+Then open `index.html` in your browser to browse the archives with iframe previews.
 
 ## License
 
