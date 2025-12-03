@@ -1,0 +1,61 @@
+name: Daily Scraper
+
+on:
+  schedule:
+    # Run daily at 10pm UTC (11pm CET / 12am CEST)
+    - cron: '0 22 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: write # Required to commit screenshots
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # Fetch full history for proper git operations
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+      
+      - name: Run scraper
+        run: npm start
+      
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Actions Bot"
+      
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Show git status
+        run: git status
+      
+      - name: Commit and push screenshots
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git add screenshots/
+          git commit -m "chore: add daily screenshots [skip ci]"
+          git push
+

@@ -1,0 +1,23 @@
+{
+  "name": "onvista-snapshot",
+  "version": "1.0.0",
+  "description": "Playwright automation for capturing screenshots from onvista index pages",
+  "main": "scraper.js",
+  "type": "module",
+  "scripts": {
+    "start": "node scraper.js",
+    "install-browsers": "npx playwright install chromium"
+  },
+  "keywords": [
+    "playwright",
+    "automation",
+    "screenshot",
+    "onvista"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}
+
