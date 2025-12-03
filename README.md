@@ -138,6 +138,7 @@ You can modify `scraper.js` to adjust:
 - The browser runs in headless mode for efficiency
 - There's a 2-second delay between processing different URLs
 - HTML archives are self-contained with inlined CSS and base64-encoded images
+- Each HTML file includes a `<base>` tag pointing to the original onvista.de URL for proper link resolution
 - Stock links in the archived pages remain clickable and open live onvista.de pages
 - The script handles errors gracefully and continues with remaining URLs
 - Use `npm run gallery` or `node generate-gallery.js` to regenerate the gallery after scraping

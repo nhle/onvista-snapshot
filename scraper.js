@@ -134,8 +134,11 @@ async function getNextPageButton(page) {
  */
 async function savePageAsHTML(page, filepath) {
   try {
+    // Get current page URL for base tag
+    const pageUrl = page.url();
+    
     // Use page.evaluate to inline all resources directly in the browser context
-    const html = await page.evaluate(async () => {
+    const html = await page.evaluate(async (baseUrl) => {
       // Helper function to fetch and convert resource to data URL
       async function fetchAsDataURL(url) {
         try {
@@ -151,6 +154,20 @@ async function savePageAsHTML(page, filepath) {
           console.log('Failed to fetch:', url);
           return null;
         }
+      }
+
+      // Remove existing base tag if present
+      const existingBase = document.querySelector('base');
+      if (existingBase) {
+        existingBase.remove();
+      }
+
+      // Add base tag to head for correct URL resolution
+      const baseTag = document.createElement('base');
+      baseTag.href = baseUrl;
+      const head = document.querySelector('head');
+      if (head) {
+        head.insertBefore(baseTag, head.firstChild);
       }
 
       // Inline all stylesheets
@@ -195,7 +212,7 @@ async function savePageAsHTML(page, filepath) {
 
       // Return the modified HTML
       return document.documentElement.outerHTML;
-    });
+    }, pageUrl);
 
     // Write the HTML file
     writeFileSync(filepath, `<!DOCTYPE html>\n${html}`, 'utf-8');
