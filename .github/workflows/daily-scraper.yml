@@ -84,6 +84,10 @@ jobs:
       - name: Commit and push screenshots
         working-directory: screenshots
         run: |
+          # Remove or modify .gitignore to allow screenshots directory
+          if [ -f .gitignore ]; then
+            grep -v "screenshots/" .gitignore > .gitignore.tmp && mv .gitignore.tmp .gitignore || true
+          fi
           git add screenshots/ *.html
           if [ -n "$(git status --porcelain)" ]; then
             git commit -m "chore: add daily screenshots $(date +%Y-%m-%d)"
